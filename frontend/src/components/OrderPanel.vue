@@ -1,34 +1,40 @@
 <script setup>
+// OrderPanel 订单面板：录入 SKU 与数量、提交拣料单、展示扣减明细，并控制动线播放与历史回看。
 import { onMounted, reactive, ref, watch } from 'vue'
 import { api } from '../api'
 
 const props = defineProps({
-  skus: { type: Array, default: () => [] },
-  result: { type: Object, default: null },
-  activeIndex: { type: Number, default: -1 },
-  pathLength: { type: Number, default: 0 },
-  playing: { type: Boolean, default: false },
-  speed: { type: Number, default: 300 }
+  skus: { type: Array, default: () => [] }, // 可选 SKU 列表
+  result: { type: Object, default: null }, // 当前订单结果
+  activeIndex: { type: Number, default: -1 }, // 动线当前下标
+  pathLength: { type: Number, default: 0 }, // 动线路径长度
+  playing: { type: Boolean, default: false }, // 是否播放中
+  speed: { type: Number, default: 300 } // 播放步进间隔
 })
 const emit = defineEmits(['created', 'toggle-play', 'reset', 'step', 'update:speed'])
 
+// 订单明细行、错误提示、提交中状态、历史订单
 const lines = reactive([])
 const error = ref('')
 const busy = ref(false)
 const history = ref([])
 
+// SKU 列表就绪后，默认填入一行首项 SKU
 watch(() => props.skus, (list) => {
   if (lines.length === 0 && list.length) lines.push({ sku: list[0], qty: 10 })
 }, { immediate: true })
 
+// 新增一行明细
 function addLine() {
   lines.push({ sku: props.skus[0] || '', qty: 10 })
 }
 
+// 删除指定明细行
 function removeLine(index) {
   lines.splice(index, 1)
 }
 
+// 快捷勾选 / 取消某个 SKU
 function toggleSku(sku) {
   const index = lines.findIndex((line) => line.sku === sku)
   if (index >= 0) {
@@ -38,6 +44,7 @@ function toggleSku(sku) {
   }
 }
 
+// 校验明细后提交拣料单，成功后刷新历史订单
 async function submit() {
   error.value = ''
   if (lines.length === 0) {
@@ -66,6 +73,7 @@ async function submit() {
   }
 }
 
+// 拉取历史订单列表
 async function loadHistory() {
   try {
     history.value = await api.listOrders()
@@ -74,6 +82,7 @@ async function loadHistory() {
   }
 }
 
+// 回看指定历史订单的明细与动线
 async function openOrder(id) {
   try {
     const order = await api.getOrder(id)

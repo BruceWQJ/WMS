@@ -1,15 +1,17 @@
 <script setup>
+// CellEditor 库位编辑器：维护单个格点的类型、巷道、方向、优先级与库存，支持新建/保存/删除。
 import { reactive, watch } from 'vue'
 import { api } from '../api'
 
 const props = defineProps({
-  x: { type: Number, required: true },
-  y: { type: Number, required: true },
-  location: { type: Object, default: null },
-  skus: { type: Array, default: () => [] }
+  x: { type: Number, required: true }, // 格点横坐标
+  y: { type: Number, required: true }, // 格点纵坐标
+  location: { type: Object, default: null }, // 已有库位，为空表示新建
+  skus: { type: Array, default: () => [] } // 可选 SKU 列表
 })
 const emit = defineEmits(['saved', 'deleted', 'close'])
 
+// 编辑表单：存储类型、巷道、通行方向、拣料优先级、库存行
 const form = reactive({
   storageType: 'FLOOR',
   aisleId: '',
@@ -21,6 +23,7 @@ const form = reactive({
 const error = reactive({ value: '' })
 const busy = reactive({ value: false })
 
+// 用当前库位数据回填表单，并按类型校正默认方向
 function reset() {
   const loc = props.location
   form.storageType = loc?.storageType || 'FLOOR'
@@ -36,20 +39,24 @@ function reset() {
 
 watch(() => props.location, reset, { immediate: true })
 watch(() => [props.x, props.y], reset)
+// 切换到高架区时，方向只允许南北单向
 watch(() => form.storageType, (type) => {
   if (type === 'RACK' && !['NORTH_TO_SOUTH', 'SOUTH_TO_NORTH'].includes(form.direction)) {
     form.direction = 'NORTH_TO_SOUTH'
   }
 })
 
+// 新增一行库存记录
 function addRow() {
   form.inventory.push({ sku: '', qty: 10 })
 }
 
+// 删除指定库存行
 function removeRow(index) {
   form.inventory.splice(index, 1)
 }
 
+// 校验库存数量后提交：已有库位走更新，否则新建
 async function save() {
   busy.value = true
   error.value = ''
@@ -86,6 +93,7 @@ async function save() {
   }
 }
 
+// 删除当前已有库位
 async function remove() {
   if (!props.location?.id) return
   busy.value = true

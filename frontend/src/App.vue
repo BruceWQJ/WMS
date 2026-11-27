@@ -1,27 +1,33 @@
 <script setup>
+// App 根组件：统筹仓库/库位数据、订单结果与动线播放状态，组合地图、库位编辑与订单面板。
 import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
 import { api } from './api'
 import WarehouseMap from './components/WarehouseMap.vue'
 import CellEditor from './components/CellEditor.vue'
 import OrderPanel from './components/OrderPanel.vue'
 
+// 仓库配置、库位列表、当前选中格点、订单结果
 const warehouse = ref({})
 const locations = ref([])
 const selected = ref(null)
 const result = ref(null)
+// 动线播放：当前路径下标、是否播放中、步进间隔（毫秒）
 const activeIndex = ref(-1)
 const playing = ref(false)
 const speed = ref(300)
 const error = ref('')
 const busy = ref(false)
 
+// 仓库配置表单（名称、宽高）
 const whForm = reactive({ name: '', width: 20, height: 20 })
 
+// 当前选中格点对应的库位对象
 const selectedLocation = computed(() => {
   if (!selected.value) return null
   return locations.value.find((l) => l.x === selected.value.x && l.y === selected.value.y) || null
 })
 
+// 汇总全部库存中出现过的 SKU，供订单与库位编辑下拉选择
 const skus = computed(() => {
   const set = new Set()
   for (const loc of locations.value) {
@@ -30,10 +36,12 @@ const skus = computed(() => {
   return Array.from(set).sort()
 })
 
+// 当前动线路径长度
 const pathLength = computed(() =>
   result.value?.route?.reachable ? result.value.route.path?.length || 0 : 0
 )
 
+// 仓库数据变化时同步到配置表单
 watch(warehouse, (w) => {
   if (!w?.id) return
   whForm.name = w.name
@@ -41,6 +49,7 @@ watch(warehouse, (w) => {
   whForm.height = w.height
 })
 
+// 拉取仓库配置与库位列表
 async function loadData() {
   busy.value = true
   error.value = ''
@@ -55,6 +64,7 @@ async function loadData() {
   }
 }
 
+// 保存仓库网格配置（出入口固定为 0,0）
 async function saveWarehouse() {
   busy.value = true
   try {
@@ -76,6 +86,7 @@ async function saveWarehouse() {
   }
 }
 
+// 清空并重新生成内置示例仓库
 async function reseed() {
   if (!confirm('重新生成示例仓库将清空当前所有库位和订单，是否继续？')) return
   busy.value = true
@@ -93,15 +104,18 @@ async function reseed() {
   }
 }
 
+// 库位保存成功后刷新列表
 function onSaved() {
   loadData()
 }
 
+// 库位删除后取消选中并刷新列表
 function onDeleted() {
   selected.value = null
   loadData()
 }
 
+// 订单创建或回看后，记录结果并初始化动线播放位置
 function onCreated(order) {
   stopTimer()
   result.value = order
@@ -111,6 +125,7 @@ function onCreated(order) {
 
 let timer = null
 
+// 停止播放并清除定时器
 function stopTimer() {
   if (timer) {
     clearInterval(timer)
@@ -119,6 +134,7 @@ function stopTimer() {
   playing.value = false
 }
 
+// 按当前速度启动自动步进播放
 function startTimer() {
   stopTimer()
   if (!pathLength.value) return
@@ -132,6 +148,7 @@ function startTimer() {
   }, speed.value)
 }
 
+// 播放 / 暂停切换
 function togglePlay() {
   if (!pathLength.value) return
   if (playing.value) {
@@ -142,17 +159,20 @@ function togglePlay() {
   startTimer()
 }
 
+// 重置到路径起点
 function reset() {
   stopTimer()
   activeIndex.value = pathLength.value ? 0 : -1
 }
 
+// 手动单步前进 / 后退，delta 为步长（+1 或 -1）
 function step(delta) {
   stopTimer()
   if (!pathLength.value) return
   activeIndex.value = Math.max(0, Math.min(pathLength.value - 1, activeIndex.value + delta))
 }
 
+// 调整播放速度，播放中则按新速度重启定时器
 function changeSpeed(value) {
   speed.value = value
   if (playing.value) startTimer()

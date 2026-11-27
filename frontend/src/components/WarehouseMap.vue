@@ -1,30 +1,35 @@
 <script setup>
+// WarehouseMap 仓库网格地图：SVG 绘制库位、单行道箭头、出入口、拣料点与动线路径。
 import { computed } from 'vue'
 
 const props = defineProps({
-  warehouse: { type: Object, required: true },
-  locations: { type: Array, default: () => [] },
-  route: { type: Object, default: null },
-  activeIndex: { type: Number, default: -1 },
-  selected: { type: Object, default: null }
+  warehouse: { type: Object, required: true }, // 仓库网格与出入口配置
+  locations: { type: Array, default: () => [] }, // 库位列表（含库存与方向）
+  route: { type: Object, default: null }, // 当前订单动线（路径、拣料点、可达性）
+  activeIndex: { type: Number, default: -1 }, // 动线播放当前下标
+  selected: { type: Object, default: null } // 当前选中的格点
 })
 const emit = defineEmits(['select-cell'])
 
+// 网格步距、格点尺寸与画布边距
 const pitch = 29
 const rectSize = 27
 const pad = 22
 
 const width = computed(() => props.warehouse?.width || 20)
 const height = computed(() => props.warehouse?.height || 20)
+// SVG 画布尺寸（viewBox）
 const vbWidth = computed(() => width.value * pitch + pad * 2)
 const vbHeight = computed(() => height.value * pitch + pad * 2)
 
+// 坐标 -> 库位 的查找表，便于按格点取属性
 const locMap = computed(() => {
   const map = new Map()
   for (const loc of props.locations || []) map.set(loc.x + ',' + loc.y, loc)
   return map
 })
 
+// 生成网格内全部格点（含对应库位，可能为空）
 const cells = computed(() => {
   const result = []
   for (let y = 0; y < height.value; y++) {
@@ -35,9 +40,11 @@ const cells = computed(() => {
   return result
 })
 
+// 坐标换算为 SVG 像素中心
 const cx = (x) => pad + x * pitch + pitch / 2
 const cy = (y) => pad + y * pitch + pitch / 2
 
+// 通行方向 -> 箭头字符
 const arrowOf = (dir) => ({
   NORTH_TO_SOUTH: '↓',
   SOUTH_TO_NORTH: '↑',
@@ -45,18 +52,24 @@ const arrowOf = (dir) => ({
   WEST_TO_EAST: '→'
 }[dir] || '')
 
+// 库位底色：高架蓝、地堆绿，空格灰色
 const fillOf = (loc) => {
   if (!loc) return '#f8fafc'
   return loc.storageType === 'RACK' ? '#dbeafe' : '#dcfce7'
 }
+// 库位边框色，与底色对应
 const strokeOf = (loc) => {
   if (!loc) return '#e2e8f0'
   return loc.storageType === 'RACK' ? '#3b82f6' : '#22c55e'
 }
+// 判断格点是否为当前选中格
 const isSelected = (cell) => !!props.selected && props.selected.x === cell.x && props.selected.y === cell.y
 
+// 动线路径折线坐标串
 const routePoints = computed(() => (props.route?.path || []).map((p) => `${cx(p.x)},${cy(p.y)}`).join(' '))
+// 播放高亮的当前位置
 const activePoint = computed(() => props.route?.path?.[props.activeIndex] || null)
+// 带访问序号的拣料点
 const stopPoints = computed(() => (props.route?.stops || []).map((p, i) => ({ ...p, index: i + 1 })))
 const startPoint = computed(() => ({ x: props.warehouse?.startX ?? 0, y: props.warehouse?.startY ?? 0 }))
 const endPoint = computed(() => ({ x: props.warehouse?.endX ?? 0, y: props.warehouse?.endY ?? 0 }))

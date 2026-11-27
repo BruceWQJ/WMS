@@ -1,3 +1,5 @@
+/* 全局基础样式：字体、配色、按钮/输入框、面板与表格等通用组件样式 */
+
 :root {
   font-family: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
   color: #0f172a;
