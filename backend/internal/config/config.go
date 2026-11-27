@@ -1,3 +1,4 @@
+// config 读取服务运行配置，支持通过环境变量覆盖默认值。
 package config
 
 import "os"
@@ -9,6 +10,7 @@ type Config struct {
 	StaticDir  string
 }
 
+// getenv 读取环境变量，为空时返回默认值 def。
 func getenv(key, def string) string {
 	if v := os.Getenv(key); v != "" {
 		return v

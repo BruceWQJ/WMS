@@ -1,3 +1,4 @@
+// service 实现下单业务：优先级扣减分配、动线生成与订单查询。
 package service
 
 import (
@@ -13,6 +14,7 @@ import (
 	"wms/backend/internal/store"
 )
 
+// invCandidate 是某 SKU 在可扣减库位上的候选记录。
 type invCandidate struct {
 	inventoryID int64
 	locationID  int64
@@ -22,11 +24,13 @@ type invCandidate struct {
 	quantity    int
 }
 
+// deduction 记录一笔库存扣减（库存行 ID 与扣减数量）。
 type deduction struct {
 	inventoryID int64
 	take        int
 }
 
+// absInt 返回整数绝对值。
 func absInt(v int) int {
 	if v < 0 {
 		return -v

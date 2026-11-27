@@ -1,3 +1,4 @@
+// store 负责 SQLite 连接、表结构迁移，以及仓库 / 库位 / 库存的数据访问。
 package store
 
 import (
@@ -44,6 +45,7 @@ func OpenDB(sqlitePath string) (*sql.DB, error) {
 	return db, nil
 }
 
+// migrate 建表（不存在则创建），完成数据库表结构初始化。
 func migrate(db *sql.DB) error {
 	stmts := []string{
 		`CREATE TABLE IF NOT EXISTS warehouse (
@@ -108,6 +110,7 @@ func migrate(db *sql.DB) error {
 	return nil
 }
 
+// GetWarehouse 读取当前仓库配置；无记录时写入一条默认仓库。
 func GetWarehouse(db *sql.DB) (model.Warehouse, error) {
 	var w model.Warehouse
 	err := db.QueryRow(`SELECT id, name, width, height, start_x, start_y, end_x, end_y FROM warehouse ORDER BY id LIMIT 1`).
@@ -123,6 +126,7 @@ func GetWarehouse(db *sql.DB) (model.Warehouse, error) {
 	return w, err
 }
 
+// validateWarehouse 校验仓库尺寸与起终点坐标是否合法。
 func validateWarehouse(w model.Warehouse) error {
 	if w.Width <= 0 || w.Height <= 0 {
 		return errors.New("仓库宽高必须大于 0")
@@ -138,6 +142,7 @@ func validateWarehouse(w model.Warehouse) error {
 	return nil
 }
 
+// CreateWarehouse 新建仓库；仓库已存在时返回错误。
 func CreateWarehouse(db *sql.DB, w model.Warehouse) (model.Warehouse, error) {
 	var count int
 	if err := db.QueryRow(`SELECT COUNT(*) FROM warehouse`).Scan(&count); err != nil {
@@ -158,6 +163,7 @@ func CreateWarehouse(db *sql.DB, w model.Warehouse) (model.Warehouse, error) {
 	return GetWarehouse(db)
 }
 
+// ResetWarehouse 将仓库恢复为默认 20×20 配置。
 func ResetWarehouse(db *sql.DB) (model.Warehouse, error) {
 	wh, err := GetWarehouse(db)
 	if err != nil {
@@ -171,6 +177,7 @@ func ResetWarehouse(db *sql.DB) (model.Warehouse, error) {
 	return GetWarehouse(db)
 }
 
+// UpdateWarehouse 更新仓库配置。
 func UpdateWarehouse(db *sql.DB, w model.Warehouse) (model.Warehouse, error) {
 	if err := validateWarehouse(w); err != nil {
 		return w, err
@@ -190,6 +197,7 @@ func UpdateWarehouse(db *sql.DB, w model.Warehouse) (model.Warehouse, error) {
 	return GetWarehouse(db)
 }
 
+// ListLocations 返回全部库位及其库存明细。
 func ListLocations(q dbtx) ([]model.Location, error) {
 	rows, err := q.Query(`SELECT id, x, y, storage_type, COALESCE(aisle_id,''), direction, picking_priority FROM location ORDER BY y, x`)
 	if err != nil {
@@ -231,6 +239,7 @@ func ListLocations(q dbtx) ([]model.Location, error) {
 	return locs, invRows.Err()
 }
 
+// GetLocation 按 ID 查询单个库位及其库存。
 func GetLocation(q dbtx, id int64) (model.Location, error) {
 	var l model.Location
 	err := q.QueryRow(`SELECT id, x, y, storage_type, COALESCE(aisle_id,''), direction, picking_priority FROM location WHERE id=?`, id).
@@ -255,6 +264,7 @@ func GetLocation(q dbtx, id int64) (model.Location, error) {
 	return l, rows.Err()
 }
 
+// ListLocationAttrs 返回全部库位的属性（不含库存），供动线算法使用。
 func ListLocationAttrs(q dbtx) ([]model.Location, error) {
 	rows, err := q.Query(`SELECT id, x, y, storage_type, COALESCE(aisle_id,''), direction, picking_priority FROM location`)
 	if err != nil {
@@ -272,6 +282,7 @@ func ListLocationAttrs(q dbtx) ([]model.Location, error) {
 	return locs, rows.Err()
 }
 
+// replaceInventory 清空并重建某库位的库存记录。
 func replaceInventory(tx dbtx, locationID int64, inv map[string]int) error {
 	if _, err := tx.Exec(`DELETE FROM inventory WHERE location_id=?`, locationID); err != nil {
 		return err
@@ -293,6 +304,7 @@ func replaceInventory(tx dbtx, locationID int64, inv map[string]int) error {
 	return nil
 }
 
+// SaveLocation 校验并新建或更新库位，同坐标冲突时覆盖更新。
 func SaveLocation(db *sql.DB, l model.Location) (model.Location, error) {
 	if l.StorageType != "FLOOR" && l.StorageType != "RACK" {
 		return l, errors.New("storage_type 只能为 FLOOR 或 RACK")
@@ -367,6 +379,7 @@ func SaveLocation(db *sql.DB, l model.Location) (model.Location, error) {
 	return l, nil
 }
 
+// DeleteLocation 按 ID 删除库位；记录不存在时返回 sql.ErrNoRows。
 func DeleteLocation(db *sql.DB, id int64) error {
 	res, err := db.Exec(`DELETE FROM location WHERE id=?`, id)
 	if err != nil {
@@ -378,6 +391,7 @@ func DeleteLocation(db *sql.DB, id int64) error {
 	return nil
 }
 
+// SetInventory 写入或覆盖某库位单个 SKU 的库存数量。
 func SetInventory(db *sql.DB, item model.InventoryItem) error {
 	if item.SKU == "" {
 		return errors.New("sku 不能为空")
@@ -397,6 +411,7 @@ func SetInventory(db *sql.DB, item model.InventoryItem) error {
 	return err
 }
 
+// ListInventory 返回全部库存明细。
 func ListInventory(db *sql.DB) ([]model.InventoryItem, error) {
 	rows, err := db.Query(`SELECT location_id, sku, quantity FROM inventory ORDER BY location_id, sku`)
 	if err != nil {
@@ -414,6 +429,7 @@ func ListInventory(db *sql.DB) ([]model.InventoryItem, error) {
 	return items, rows.Err()
 }
 
+// nullIfEmpty 空串转 NULL，非空原样返回。
 func nullIfEmpty(s string) any {
 	if s == "" {
 		return nil

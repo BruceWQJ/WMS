@@ -1,3 +1,4 @@
+// model 定义系统各层共用的数据结构与请求/响应模型。
 package model
 
 import "encoding/json"

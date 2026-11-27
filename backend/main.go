@@ -1,3 +1,4 @@
+// main 是 WMS 服务入口：加载配置、初始化数据库、写入示例数据并启动 HTTP 服务。
 package main
 
 import (
@@ -9,6 +10,7 @@ import (
 	"wms/backend/internal/store"
 )
 
+// main 装配各依赖并监听端口；数据库或路由初始化失败时直接退出。
 func main() {
 	cfg := config.Load()
 	db, err := store.OpenDB(cfg.SQLitePath)

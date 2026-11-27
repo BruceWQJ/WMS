@@ -1,3 +1,4 @@
+// httpapi 注册 REST 路由、处理 HTTP 请求，并托管前端静态文件。
 package httpapi
 
 import (
@@ -28,16 +29,19 @@ func New(cfg config.Config, db *sql.DB) http.Handler {
 	return withCORS(a.routes())
 }
 
+// writeJSON 以 JSON 格式写入响应体与状态码。
 func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
 }
 
+// writeErr 写入 JSON 错误信息。
 func writeErr(w http.ResponseWriter, status int, msg string) {
 	writeJSON(w, status, map[string]string{"error": msg})
 }
 
+// routes 注册全部 API 路由与前端静态文件回退。
 func (a *App) routes() http.Handler {
 	mux := http.NewServeMux()
 
@@ -71,6 +75,7 @@ func (a *App) routes() http.Handler {
 	return mux
 }
 
+// withCORS 为下游处理器补充跨域响应头，并处理 OPTIONS 预检请求。
 func withCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -300,6 +305,7 @@ type spaHandler struct {
 	fs  http.Handler
 }
 
+// newSPAHandler 基于前端产物目录创建静态文件处理器。
 func newSPAHandler(dir string) http.Handler {
 	abs, err := filepath.Abs(dir)
 	if err != nil {
@@ -308,6 +314,7 @@ func newSPAHandler(dir string) http.Handler {
 	return &spaHandler{dir: abs, fs: http.FileServer(http.Dir(abs))}
 }
 
+// ServeHTTP 静态资源直接返回，其余路径回退到 index.html。
 func (h *spaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if info, err := os.Stat(h.dir); err != nil || !info.IsDir() {
 		writeErr(w, http.StatusNotFound, "前端尚未构建，请运行 npm run build")
