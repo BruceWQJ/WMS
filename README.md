@@ -272,6 +272,3 @@ A：开发模式下 `go run .` 会重新编译；如使用编译产物，需重�
 
 **Q：端口被占用如何修改？**
 A：设置环境变量 `WMS_HTTP_ADDR`（后端）；前端开发端口在 `frontend/vite.config.js` 中修改 `server.port`，并同步调整代理目标。
-#   W Q J  
- #   W M S  
- 
