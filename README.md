@@ -1,14 +1,14 @@
 # WMS · 智慧仓库库位建模与拣料动线优化
 
-一个仓库管理系统（WMS）Web 应用原型，实现：仓库网格与库位属性配置、基于拣料优先级的库存自动分配，以及受单行道约束的拣料动线生成与 2D 可视化演示。
+> 🏭 一个仓库管理系统（WMS）Web 应用原型，实现仓库网格与库位属性配置、基于拣料优先级的库存自动分配，以及受单行道约束的拣料动线生成与 2D 可视化演示。
 
-- 后端：Go（标准库 `net/http`）+ SQLite（`modernc.org/sqlite`，纯 Go 驱动，无需安装原生数据库）
-- 前端：Vue 3 + Vite 7
-- 数据存储：SQLite 单文件数据库，首次启动自动建表并写入示例仓库
+- 🧩 **后端**：Go（标准库 `net/http`）+ SQLite（`modernc.org/sqlite`，纯 Go 驱动，无需安装原生数据库）
+- 🎨 **前端**：Vue 3 + Vite 7
+- 🗄 **数据存储**：SQLite 单文件数据库，首次启动自动建表并写入示例仓库
 
 ---
 
-## 一、目录结构
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">📁 目录结构</span></h2>
 
 ```
 WMS/
@@ -23,26 +23,26 @@ WMS/
 │       ├── route/route.go            # 网格建模、单行道约束 BFS、动线优化（Held-Karp / 贪心 + 局部改进）
 │       ├── service/order.go          # 下单、优先级扣减分配、订单查询
 │       └── httpapi/api.go            # REST API 路由、HTTP 处理器与前端静态文件托管
-├── frontend/                 # Vue 3 前端
+├── frontend/                         # Vue 3 前端
 │   ├── index.html
-│   ├── vite.config.js         # 开发端口 5173，/api 代理到 127.0.0.1:8080
+│   ├── vite.config.js                # 开发端口 5173，/api 代理到 127.0.0.1:8080
 │   ├── package.json
-│   ├── dist/                  # 前端构建产物（npm run build 后生成）
+│   ├── dist/                         # 前端构建产物（npm run build 后生成）
 │   └── src/
 │       ├── main.js
 │       ├── App.vue
-│       ├── api.js             # 前端 API 封装
+│       ├── api.js                    # 前端 API 封装
 │       ├── style.css
 │       └── components/
-│           ├── WarehouseMap.vue   # 仓库网格地图与路线渲染
-│           ├── OrderPanel.vue     # 订单提交、结果明细、动线播放、历史订单
-│           └── CellEditor.vue     # 单个库位属性与库存编辑
+│           ├── WarehouseMap.vue     # 仓库网格地图与路线渲染
+│           ├── OrderPanel.vue       # 订单提交、结果明细、动线播放、历史订单
+│           └── CellEditor.vue       # 单个库位属性与库存编辑
 └── README.md
 ```
 
 ---
 
-## 二、环境要求
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">🛠 环境要求</span></h2>
 
 | 组件 | 版本要求 | 说明 |
 |---|---|---|
@@ -50,15 +50,15 @@ WMS/
 | Node.js | 20 及以上（Vite 7 要求） | 安装依赖、构建前端 |
 | 包管理 | npm（随 Node 自带） | 前端依赖安装 |
 
-> 后端使用纯 Go 实现的 SQLite 驱动，**不需要**单独安装 MySQL/PostgreSQL/SQLite 服务。
+> 💡 后端使用纯 Go 实现的 SQLite 驱动，**不需要**单独安装 MySQL / PostgreSQL / SQLite 服务。
 
 ---
 
-## 三、快速启动
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">🚀 快速启动</span></h2>
 
 提供两种运行方式：**开发模式**（前后端分离，支持热更新）和**生产模式**（后端直接托管前端构建产物，单端口访问）。
 
-### 方式 A：开发模式（推荐调试使用）
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">方式 A：开发模式（推荐调试使用）</span></h3>
 
 前后端分别启动，前端 Vite 开发服务器通过代理转发 `/api` 请求到后端。
 
@@ -83,10 +83,10 @@ npm run dev
 
 访问浏览器：<http://localhost:5173>
 
-- 前端页面运行在 5173；
-- 所有 `/api` 请求由 Vite 代理到 `http://127.0.0.1:8080`，无需额外配置跨域。
+- 🌐 前端页面运行在 5173；
+- 🔀 所有 `/api` 请求由 Vite 代理到 `http://127.0.0.1:8080`，无需额外配置跨域。
 
-### 方式 B：生产模式（单端口部署）
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">方式 B：生产模式（单端口部署）</span></h3>
 
 先把前端打包成静态文件，再由后端直接托管。
 
@@ -112,11 +112,11 @@ go run .
 
 后端默认从 `../frontend/dist` 读取前端静态文件，直接访问：<http://localhost:8080>
 
-> 如果前端产物放在其他目录，可通过环境变量 `WMS_STATIC_DIR` 指定，见下一节。
+> 💡 如果前端产物放在其他目录，可通过环境变量 `WMS_STATIC_DIR` 指定，见下一节。
 
 ---
 
-## 四、配置项（环境变量）
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">⚙️ 配置项（环境变量）</span></h2>
 
 后端在 `backend/internal/config/config.go` 中读取以下环境变量，均有默认值，可不配置直接运行。
 
@@ -137,20 +137,20 @@ go run .
 
 ---
 
-## 五、使用说明
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">📖 使用说明</span></h2>
 
 界面分为左侧**仓库网格地图**和右侧**操作面板**两部分。
 
-### 1. 仓库配置
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">1. 仓库配置</span></h3>
 
-- 在右侧「仓库配置」中可修改仓库名称、宽度 X、高度 Y（范围 2–60）。
-- 出入口固定为起点 / 终点 `(0, 0)`，点击「保存配置」生效。
-- 「重新生成示例」按钮会清空当前库位与订单，重新写入内置示例仓库（20 × 20）。
+- 🏷 在右侧「仓库配置」中可修改仓库名称、宽度 X、高度 Y（范围 2–60）。
+- 🚪 出入口固定为起点 / 终点 `(0, 0)`，点击「保存配置」生效。
+- 🔄 「重新生成示例」按钮会清空当前库位与订单，重新写入内置示例仓库（20 × 20）。
 
-### 2. 查看与编辑库位
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">2. 查看与编辑库位</span></h3>
 
-- 地图上每个格子代表一个库位，点击任意格子打开「库位编辑」面板。
-- 可配置以下属性：
+- 🖱 地图上每个格子代表一个库位，点击任意格子打开「库位编辑」面板。
+- 📋 可配置以下属性：
   - **存储类型**
     - `FLOOR` 地堆区：默认双向通行，优先级高（示例为 10）；也可配置为单向通行。
     - `RACK` 高架区：强制单行道，方向只能为 `NORTH_TO_SOUTH`（↓）或 `SOUTH_TO_NORTH`（↑），优先级低（示例为 5）。
@@ -158,49 +158,49 @@ go run .
   - **通行方向** `direction`：双向 `BIDIRECTIONAL` 或各单向方向。
   - **拣料优先级** `pickingPriority`：整数，数值越大越优先被扣减。
   - **库存**：若干条 SKU 与数量（如 `SKU_A: 20`）。
-- 保存后库位与库存即时写入数据库；已有库位可在此面板删除。
+- 💾 保存后库位与库存即时写入数据库；已有库位可在此面板删除。
 
-### 3. 生成拣料单
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">3. 生成拣料单</span></h3>
 
-1. 在「交互式订单」面板中：
+1. 🛒 在「交互式订单」面板中：
    - 点击上方 SKU 按钮快捷勾选，或在明细行手动输入 SKU 名称与正整数数量；
    - 可「+ 添加明细」增加多行，点 `×` 删除某一行。
-2. 点击「**生成拣料单**」提交订单。
-3. 后端按**拣料优先级从高到低**依次扣减库存；高优先级库位不足时，自动向低优先级库位顺序扣减。
-4. 结果区展示：
+2. ✅ 点击「**生成拣料单**」提交订单。
+3. ⬇️ 后端按**拣料优先级从高到低**依次扣减库存；高优先级库位不足时，自动向低优先级库位顺序扣减。
+4. 📊 结果区展示：
    - 订单状态（`ALLOCATED` 全部分配 / `PARTIAL` 部分缺货）；
    - 总路径步数、拣料点数量；
    - 明细表格：从哪个库位 `(x, y)` 扣减了哪个 SKU、多少数量、对应优先级；
    - 若库存不足，列出缺货 SKU 的需求数量与可分配数量。
 
-### 4. 动线播放与分步高亮
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">4. 动线播放与分步高亮</span></h3>
 
 生成拣料单后，地图上会绘制优化后的拣料路线（橙色连线 + 方向箭头），编号圆圈标记各拣料点。
 
-- **播放动线**：沿路径逐步高亮当前所在位置；
-- **上一步 / 下一步**：手动单步浏览；
-- **重置**：回到路径起点；
-- **速度**：可选慢速 / 正常 / 快速。
+- ▶️ **播放动线**：沿路径逐步高亮当前所在位置；
+- ⏭ **上一步 / 下一步**：手动单步浏览；
+- ♻️ **重置**：回到路径起点；
+- ⏱ **速度**：可选慢速 / 正常 / 快速。
 
-动线算法在单行道约束下求解：高架巷道内禁止逆行，只能沿合法方向由入口进入、出口离开；访问点较少时使用精确求解（Held-Karp），较多时使用贪心构造加局部改进，并计算返回终点的总路径长度。
+> 🧭 动线算法在单行道约束下求解：高架巷道内禁止逆行，只能沿合法方向由入口进入、出口离开；访问点较少时使用精确求解（Held-Karp），较多时使用贪心构造加局部改进，并计算返回终点的总路径长度。
 
-### 5. 历史订单
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">5. 历史订单</span></h3>
 
-底部「历史订单」列出最近 50 笔订单，点击任意一条可回看其扣减明细与拣料动线。
+- 📜 底部「历史订单」列出最近 50 笔订单，点击任意一条可回看其扣减明细与拣料动线。
 
 ---
 
-## 六、后端 API 一览
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">🔌 后端 API 一览</span></h2>
 
 基础前缀：`/api`，请求与响应均为 JSON。
 
-### 健康检查
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">健康检查</span></h3>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/health` | 服务健康检查 |
 
-### 仓库
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">仓库</span></h3>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -209,7 +209,7 @@ go run .
 | PUT | `/api/warehouse` | 更新仓库配置 |
 | DELETE | `/api/warehouse` | 重置仓库为默认 20×20 配置 |
 
-### 库位
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">库位</span></h3>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -219,14 +219,14 @@ go run .
 | PUT | `/api/locations/{id}` | 更新库位 |
 | DELETE | `/api/locations/{id}` | 删除库位 |
 
-### 库存
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">库存</span></h3>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
 | GET | `/api/inventory` | 库存明细列表 |
 | POST | `/api/inventory` | 写入 / 覆盖某库位某 SKU 数量 |
 
-### 订单与种子
+<h3 style="margin-top: 20px;margin-bottom: 12px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.0em;"><span style="display: inline-block;background: rgb(139, 132, 156);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">订单与种子</span></h3>
 
 | 方法 | 路径 | 说明 |
 |---|---|---|
@@ -248,18 +248,18 @@ go run .
 
 ---
 
-## 七、示例数据与数据库
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">🗄 示例数据与数据库</span></h2>
 
-- 后端首次启动时，若库位表与订单表均为空，会自动写入内置示例仓库（20 × 20）：
+- 🌱 后端首次启动时，若库位表与订单表均为空，会自动写入内置示例仓库（20 × 20）：
   - 地堆区分布在两侧与起点附近，优先级 10；
   - 高架巷道位于指定列，南北向交替单行通行，优先级 5；
   - 预置 `SKU_A` ~ `SKU_F` 若干库存。
-- 数据库文件默认位于后端运行目录下的 `wms.db`（含 `-wal`、`-shm` 伴随文件）。
-- 删除 `wms.db` 后重启后端即可恢复到初始状态；也可调用 `POST /api/seed` 或在界面点击「重新生成示例」。
+- 📁 数据库文件默认位于后端运行目录下的 `wms.db`（含 `-wal`、`-shm` 伴随文件）。
+- 🧹 删除 `wms.db` 后重启后端即可恢复到初始状态；也可调用 `POST /api/seed` 或在界面点击「重新生成示例」。
 
 ---
 
-## 八、常见问题
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">❓ 常见问题</span></h2>
 
 **Q：前端访问 5173 后接口报错 / 数据加载失败？**
 A：请确认后端已在 8080 启动；开发模式下 `/api` 由 Vite 代理到 `127.0.0.1:8080`，后端未启动时无法获取数据。
