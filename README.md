@@ -14,8 +14,9 @@
 WMS/
 ├── backend/                          # Go 后端服务
 │   ├── main.go                       # 入口：加载配置、初始化 DB、种子数据、启动 HTTP 服务
-│   ├── go.mod / go.sum
-│   ├── wms.db                        # SQLite 数据库文件（运行后自动生成）
+│   ├── go.mod / go.sum               # Go 模块声明与依赖锁定
+│   ├── data/                         # 运行时数据目录（SQLite 数据库及 -wal/-shm 伴生文件）
+│   │   └── wms.db                    # SQLite 数据库（首次启动自动生成，不纳入版本管理）
 │   └── internal/                     # 后端内部分包（不对外暴露）
 │       ├── config/config.go          # 配置项（环境变量读取）
 │       ├── model/model.go            # 数据结构与请求/响应模型
@@ -27,7 +28,7 @@ WMS/
 │   ├── index.html
 │   ├── vite.config.js                # 开发端口 5173，/api 代理到 127.0.0.1:8080
 │   ├── package.json
-│   ├── dist/                         # 前端构建产物（npm run build 后生成）
+│   ├── dist/                         # 前端构建产物（npm run build 后生成，不纳入版本管理）
 │   └── src/
 │       ├── main.js
 │       ├── App.vue
@@ -37,8 +38,11 @@ WMS/
 │           ├── WarehouseMap.vue     # 仓库网格地图与路线渲染
 │           ├── OrderPanel.vue       # 订单提交、结果明细、动线播放、历史订单
 │           └── CellEditor.vue       # 单个库位属性与库存编辑
+├── .gitignore                        # 忽略编译产物、数据库、日志、node_modules 与 dist
 └── README.md
 ```
+
+> 📦 提交 / 打包部署时只携带源码：编译后的可执行文件、`wms.db` 等运行时数据、`node_modules/` 与 `dist/` 均由 `.gitignore` 排除，在目标环境重新生成即可。
 
 ---
 
@@ -46,7 +50,7 @@ WMS/
 
 | 组件 | 版本要求 | 说明 |
 |---|---|---|
-| Go | 1.21 及以上（`go.mod` 声明 1.27.2） | 编译运行后端 |
+| Go | 1.27 及以上（`go.mod` 声明 1.27.2） | 编译运行后端，支持 Linux / Windows |
 | Node.js | 20 及以上（Vite 7 要求） | 安装依赖、构建前端 |
 | 包管理 | npm（随 Node 自带） | 前端依赖安装 |
 
@@ -64,7 +68,7 @@ WMS/
 
 **1. 启动后端（端口 8080）**
 
-```powershell
+```bash
 cd backend
 go run .
 ```
@@ -75,7 +79,7 @@ go run .
 
 另开一个终端：
 
-```powershell
+```bash
 cd frontend
 npm install
 npm run dev
@@ -92,7 +96,7 @@ npm run dev
 
 **1. 构建前端**
 
-```powershell
+```bash
 cd frontend
 npm install
 npm run build
@@ -102,17 +106,55 @@ npm run build
 
 **2. 启动后端**
 
-```powershell
+直接以源码方式运行（Linux / Windows 通用）：
+
+```bash
 cd backend
 go run .
-# 或编译为可执行文件后运行：
-# go build -o backend.exe .
-# .\backend.exe
+```
+
+也可先编译为当前平台的可执行文件再运行：
+
+```bash
+# Linux
+go build -o wms .
+./wms
+
+# Windows（PowerShell）
+go build -o wms.exe .
+.\wms.exe
 ```
 
 后端默认从 `../frontend/dist` 读取前端静态文件，直接访问：<http://localhost:8080>
 
 > 💡 如果前端产物放在其他目录，可通过环境变量 `WMS_STATIC_DIR` 指定，见下一节。
+
+<h2 style="margin-top: 30px;margin-bottom: 15px;font-weight: bold;border-bottom: 2px solid rgb(239, 112, 96);font-size: 1.3em;"><span style="display: inline-block;background: rgb(239, 112, 96);color: rgb(255, 255, 255);padding: 3px 10px 1px;border-top-right-radius: 3px;border-top-left-radius: 3px;margin-right: 3px;">🐧 Linux 部署</span></h2>
+
+部署到 Linux 时**只上传源码**，无需携带本机编译的 `.exe`、`wms.db` 数据库、`node_modules/` 与 `dist/`——这些在目标环境重新生成即可。
+
+**前置依赖**：服务器安装 Go 1.27+ 与 Node.js 20+（前端也可在本机构建后只上传 `dist/`）。
+
+**1. 构建前端**
+
+```bash
+cd frontend
+npm install
+npm run build
+# 产物输出到 frontend/dist/
+```
+
+**2. 编译并启动后端**
+
+```bash
+cd ../backend
+go build -o wms .
+./wms
+```
+
+后端启动后默认监听 `:8080`，并从 `../frontend/dist` 托管前端页面；若 `dist/` 位于其他路径，用 `WMS_STATIC_DIR` 指定。SQLite 数据库默认落在 `backend/data/` 目录，首次启动时自动建表并写入示例数据。
+
+> 🔧 后台常驻可使用 `systemd` 服务或 `nohup ./wms > server.log 2>&1 &`；监听端口、数据库路径、静态目录均通过环境变量配置，见下一节。
 
 ---
 
@@ -123,10 +165,19 @@ go run .
 | 环境变量 | 默认值 | 说明 |
 |---|---|---|
 | `WMS_HTTP_ADDR` | `:8080` | 后端监听地址与端口 |
-| `WMS_SQLITE_PATH` | `wms.db` | SQLite 数据库文件路径（相对路径基于后端运行目录） |
+| `WMS_SQLITE_PATH` | `data/wms.db` | SQLite 数据库文件路径（相对路径基于后端运行目录，目录不存在时自动创建） |
 | `WMS_STATIC_DIR` | `../frontend/dist` | 前端构建产物目录，用于生产模式托管静态页面 |
 
-Windows PowerShell 示例（临时设置当前终端会话）：
+Linux / macOS（bash，临时设置当前终端会话）：
+
+```bash
+export WMS_HTTP_ADDR=":9000"
+export WMS_SQLITE_PATH="/data/wms.db"
+export WMS_STATIC_DIR="/app/frontend/dist"
+go run .
+```
+
+Windows PowerShell 示例：
 
 ```powershell
 $env:WMS_HTTP_ADDR=":9000"
@@ -254,8 +305,8 @@ go run .
   - 地堆区分布在两侧与起点附近，优先级 10；
   - 高架巷道位于指定列，南北向交替单行通行，优先级 5；
   - 预置 `SKU_A` ~ `SKU_F` 若干库存。
-- 📁 数据库文件默认位于后端运行目录下的 `wms.db`（含 `-wal`、`-shm` 伴随文件）。
-- 🧹 删除 `wms.db` 后重启后端即可恢复到初始状态；也可调用 `POST /api/seed` 或在界面点击「重新生成示例」。
+- 📁 数据库文件默认位于后端运行目录下的 `data/wms.db`（含 `-wal`、`-shm` 伴随文件）。
+- 🧹 删除 `data/wms.db`（及伴随文件）后重启后端即可恢复到初始状态；也可调用 `POST /api/seed` 或在界面点击「重新生成示例」。
 
 ---
 
@@ -268,7 +319,7 @@ A：请确认后端已在 8080 启动；开发模式下 `/api` 由 Vite 代理�
 A：先在 `frontend` 目录执行 `npm run build` 生成 `dist/`；若产物目录不在默认位置，设置 `WMS_STATIC_DIR` 指向该目录。
 
 **Q：修改了 Go 代码如何生效？**
-A：开发模式下 `go run .` 会重新编译；如使用编译产物，需重新 `go build`。
+A：开发模式下 `go run .` 会重新编译；如使用编译产物，需在目标平台重新 `go build`（Linux 产物为 `wms`，Windows 产物为 `wms.exe`）。
 
 **Q：端口被占用如何修改？**
 A：设置环境变量 `WMS_HTTP_ADDR`（后端）；前端开发端口在 `frontend/vite.config.js` 中修改 `server.port`，并同步调整代理目标。

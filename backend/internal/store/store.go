@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -20,11 +21,15 @@ type dbtx interface {
 	QueryRow(query string, args ...any) *sql.Row
 }
 
-// OpenDB 打开（必要时创建）SQLite 数据库并执行表结构迁移。
+// OpenDB 打开（必要时创建）SQLite 数据库并执行表结构迁移；数据目录不存在时自动创建。
 func OpenDB(sqlitePath string) (*sql.DB, error) {
 	abs, err := filepath.Abs(sqlitePath)
 	if err != nil {
 		return nil, err
+	}
+	// 确保数据库所在目录存在（默认 data/）
+	if err := os.MkdirAll(filepath.Dir(abs), 0o755); err != nil {
+		return nil, fmt.Errorf("创建数据目录失败: %w", err)
 	}
 	dsn := "file:" + filepath.ToSlash(abs) + "?_pragma=busy_timeout(5000)&_pragma=journal_mode(WAL)&_pragma=foreign_keys(1)"
 

@@ -21,7 +21,7 @@ func getenv(key, def string) string {
 // Load 从环境变量读取配置，未设置时使用默认值。
 func Load() Config {
 	return Config{
-		SQLitePath: getenv("WMS_SQLITE_PATH", "wms.db"),
+		SQLitePath: getenv("WMS_SQLITE_PATH", "data/wms.db"),
 		HTTPAddr:   getenv("WMS_HTTP_ADDR", ":8080"),
 		StaticDir:  getenv("WMS_STATIC_DIR", "../frontend/dist"),
 	}
